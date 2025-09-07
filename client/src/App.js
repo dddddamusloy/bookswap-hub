@@ -6,6 +6,22 @@ const isAdminEmail = (email) => (email || '').toLowerCase() === 'admin@mail.com'
 // same rule as backend: ≥8 chars, 1 upper, 1 lower, 1 digit, 1 symbol
 const STRONG_PW = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
 
+/* ===== Image URL helper (IMPORTANT) =====
+   Ensures images come from your backend on Render in prod,
+   and from localhost:5000 during local dev. */
+const BACKEND =
+  (typeof process !== 'undefined' && process.env.REACT_APP_API_URL) ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://bookswap-hub.onrender.com');
+
+function imgUrl(img) {
+  if (!img) return '';
+  if (/^https?:\/\//i.test(img)) return img;      // already absolute
+  const p = String(img).replace(/^\/+/, '');       // trim leading slash
+  return `${BACKEND}/${p}`;                        // e.g. https://.../uploads/xyz.jpg
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('books'); // books | add | mybooks | myreq | admin
@@ -393,10 +409,11 @@ export default function App() {
           <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:12}}>
             {allApprovedNotMine.map(b=>(
               <div key={b._id} style={{border:"1px solid #ddd", padding:12, borderRadius:6, background:'#fff'}}>
-                {b.image && (
+                {(b.image || b.imageUrl) && (
                   <img
-                    src={`http://localhost:5000${b.image}`}
+                    src={imgUrl(b.imageUrl || b.image)}
                     alt={b.title}
+                    onError={(e)=>{ e.currentTarget.src = '/logo192.png'; }}
                     style={{width:"100%", height:150, objectFit:"cover", borderRadius:4}}
                   />
                 )}
@@ -488,10 +505,11 @@ export default function App() {
           <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:12}}>
             {myBooks.map(b=>(
               <div key={b._id} style={{border:"1px solid #ddd", padding:12, borderRadius:6, background:'#fff'}}>
-                {b.image && (
+                {(b.image || b.imageUrl) && (
                   <img
-                    src={`http://localhost:5000${b.image}`}
+                    src={imgUrl(b.imageUrl || b.image)}
                     alt={b.title}
+                    onError={(e)=>{ e.currentTarget.src = '/logo192.png'; }}
                     style={{width:"100%", height:150, objectFit:"cover", borderRadius:4}}
                   />
                 )}
@@ -594,7 +612,14 @@ export default function App() {
           <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:12}}>
             {adminBooks.map(b=>(
               <div key={b._id} style={{border:"1px solid #ddd", padding:12, borderRadius:6, background:'#fff'}}>
-                {b.image && <img src={`http://localhost:5000${b.image}`} alt={b.title} style={{width:"100%", height:150, objectFit:"cover", borderRadius:4}}/>}
+                {(b.image || b.imageUrl) && (
+                  <img
+                    src={imgUrl(b.imageUrl || b.image)}
+                    alt={b.title}
+                    onError={(e)=>{ e.currentTarget.src = '/logo192.png'; }}
+                    style={{width:"100%", height:150, objectFit:"cover", borderRadius:4}}
+                  />
+                )}
                 <div style={{marginTop:6}}><b>{b.title}</b> by {b.author}</div>
                 <div style={{marginTop:4}}>{b.description}</div>
                 <div style={{marginTop:4}}>Book ID: {b.bookId}</div>
